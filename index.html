@@ -1,0 +1,528 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>光域 · 内外双层自适应采光交互模型</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f4ee;color:#233c34;font:15px/1.6 'Microsoft YaHei',sans-serif}header{padding:25px 34px;border-bottom:1px solid #ccd5c9;display:flex;justify-content:space-between;align-items:center}h1{font-size:26px;margin:0}small,.muted{color:#66786e}main{display:grid;grid-template-columns:300px minmax(0,1fr)}aside{padding:24px;border-right:1px solid #ccd5c9}h2{font-size:16px;margin:0 0 16px}label{display:block;margin:13px 0;font-size:13px}label span{float:right;font-family:monospace}input{width:100%;accent-color:#3f7962}button,a.button{font:inherit;font-size:13px;border:1px solid #9bad9f;background:#fff;color:#234638;padding:8px 12px;border-radius:4px;cursor:pointer;text-decoration:none}button:hover{background:#e0e9df}.buttons{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}.stage{position:relative;background:#e8ede5}canvas{display:block;width:100%;height:610px;touch-action:none}.caption{position:absolute;left:23px;top:20px;pointer-events:none}.legend{position:absolute;bottom:16px;left:24px;font-size:12px}.results{padding:24px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.metric{border-top:2px solid #618575;padding:12px 0}.metric strong{display:block;font-size:24px}.note{padding:14px 0;font-size:13px;border-bottom:1px solid #ced7cc}footer{padding:20px 32px;font-size:12px}a{color:#346951}#status{color:#785329}@media(max-width:850px){main{grid-template-columns:1fr}aside{border:0;display:grid;grid-template-columns:1fr 1fr;gap:0 22px}aside h2,aside .buttons,aside p{grid-column:1/-1}canvas{height:460px}.metrics{grid-template-columns:1fr 1fr}header{padding:20px;display:block}label{min-width:0}}@media print{aside,.buttons,footer{display:none}main{display:block}canvas{height:500px}}
+main{grid-template-columns:56px 300px minmax(0,1fr);align-items:start}main.sidebar-closed{grid-template-columns:56px minmax(0,1fr)}.parameter-rail{position:sticky;top:0;min-height:calc(100vh - 120px);border-right:1px solid #ccd5c9;padding:14px 6px}.parameter-rail button{display:flex;align-items:center;flex-direction:column;gap:14px;width:42px;padding:12px 6px;background:transparent;border-color:transparent}.parameter-rail button:hover,.parameter-rail button[aria-expanded=true]{background:#dfe9dd;border-color:#9bad9f}.rail-label{writing-mode:vertical-rl;letter-spacing:3px}.parameter-rail button>span:first-child{font-size:20px}aside{position:sticky;top:0;max-height:100vh;overflow:auto;padding:20px;background:#f3f4ee;display:block}aside[hidden]{display:none}.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.panel-heading h2{margin:0}.workspace{min-width:0}.workspace-toolbar{padding:22px 26px;border-bottom:1px solid #ccd5c9;display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px}.workspace-toolbar h2{margin:0}.workspace-toolbar .buttons{margin:0;flex:1}.workspace-toolbar>a{white-space:nowrap}.stage canvas{height:clamp(480px,65vh,850px)}.legend{right:20px}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #487d65;outline-offset:3px}
+@media(max-width:850px){main,main.sidebar-closed{grid-template-columns:48px minmax(0,1fr)}.parameter-rail{padding:10px 3px}.parameter-rail button{width:40px}aside{position:fixed;left:48px;top:0;bottom:0;width:min(300px,calc(100vw - 48px));max-height:100dvh;z-index:20;box-shadow:14px 0 35px #233c3430;border-right:1px solid #a7b8a5;display:block}.workspace-toolbar{padding:18px;gap:12px}.workspace-toolbar h2{width:100%}.workspace-toolbar .buttons{flex-basis:100%}.stage canvas{height:500px}.caption{left:16px;right:16px;font-size:13px}.legend{left:16px;bottom:12px;font-size:11px}.results{padding:18px}.metric strong{font-size:20px}}
+@media print{.parameter-rail,aside,.workspace-toolbar,footer{display:none}main,main.sidebar-closed{display:block}}
+
+/* 紧凑的模型工作区 */
+header{padding:16px 26px}h1{font-size:24px}.workspace-toolbar{padding:12px 22px;gap:10px 18px}.workspace-toolbar .buttons{gap:8px}.workspace-toolbar .buttons button:nth-child(5){margin-left:16px}.workspace-toolbar>a{font-size:12px}.stage canvas{height:clamp(340px,calc(100dvh - 240px),780px)}.caption{top:16px;left:22px}.caption b{font-size:14px}.caption small{font-size:12px}.legend{font-size:11px;bottom:12px}.results{padding:16px 22px 20px}.metrics{gap:0;border-bottom:1px solid #ced7cc}.metric{border-top:0;padding:2px 22px 14px;border-right:1px solid #d5ddd2}.metric:first-child{padding-left:0}.metric:last-child{border-right:0}.metric strong{font-size:23px;margin-top:2px}.note{padding:10px 0}.results>p{margin-bottom:0}footer{padding:14px 26px}.parameter-rail{min-height:calc(100dvh - 95px)}
+@media(max-width:850px){header{padding:14px 18px;display:flex;gap:12px}header>div:last-child{font-size:11px}header small{font-size:10px}h1{font-size:21px}.workspace-toolbar{padding:12px 14px}.workspace-toolbar .buttons{flex-basis:auto;gap:6px}.workspace-toolbar .buttons button:nth-child(5){margin-left:0}.workspace-toolbar button{padding:7px 9px;font-size:12px}.stage canvas{height:clamp(340px,calc(100dvh - 300px),600px)}.caption{left:14px;right:12px}.caption b{font-size:12px}.caption small{font-size:11px}.results{padding:14px}.metric{padding:8px 12px}.metric:nth-child(2){border-right:0}.metric:nth-child(3){padding-left:0}.metric strong{font-size:20px}.metric small{font-size:11px}.legend{left:14px;font-size:10px}.metrics{row-gap:8px}}
+@media print{.stage canvas{height:500px}}
+
+/* 顶部操作、中央模型、右侧结果互不覆盖 */
+body{height:100dvh;display:flex;flex-direction:column;overflow:hidden}header{padding:10px 22px;flex:none}header>div:first-child>small{display:none}h1{font-size:22px}.workspace-toolbar{flex:none;padding:7px 18px;background:#f3f4ee;gap:8px 14px}.workspace-toolbar .buttons{flex:1}.workspace-toolbar>a{margin-left:auto}main,main.sidebar-closed{flex:1;min-height:0;align-items:stretch;grid-template-columns:48px 260px minmax(0,1fr)}main.sidebar-closed{grid-template-columns:48px minmax(0,1fr)}.parameter-rail{position:static;min-height:0;padding:8px 3px}.parameter-rail button{width:40px}aside{position:static;min-height:0;max-height:none;overflow-y:auto;width:auto;padding:16px;box-shadow:none}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 260px;min-height:0;overflow:hidden}.stage{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}.caption{position:static;padding:14px 18px 4px;flex:none}.stage canvas{flex:1;min-height:0;height:0;width:100%}.legend{position:static;flex:none;padding:8px 18px 12px;font-size:10px}.results{border-left:1px solid #ccd5c9;overflow-y:auto;padding:14px;min-height:0}.metrics{grid-template-columns:1fr 1fr;row-gap:10px}.metric,.metric:first-child,.metric:nth-child(3){padding:0 10px 10px 0}.metric:nth-child(2n){border-right:0;padding-left:10px}.metric strong{font-size:20px}.metric small{font-size:11px}.note{font-size:12px}footer{display:none}
+@media(max-width:1100px){main{grid-template-columns:48px 220px minmax(0,1fr)}.workspace{grid-template-columns:minmax(0,1fr) 220px}.results{padding:12px}.workspace-toolbar .buttons button:nth-child(5){margin-left:4px}.workspace-toolbar button{font-size:12px;padding:7px 9px}}
+@media(max-width:700px){body{height:auto;min-height:100dvh;overflow:auto}header{padding:10px 14px}header>div:last-child{font-size:10px}.workspace-toolbar{padding:9px 12px;gap:8px}.workspace-toolbar .buttons{flex-basis:100%}main,main.sidebar-closed{display:grid;grid-template-columns:44px minmax(0,1fr);flex:none}.parameter-rail{padding:6px 1px}.workspace{display:flex;flex-direction:column;overflow:visible}.stage{height:460px;flex:none}.results{border-left:0;border-top:1px solid #ccd5c9;overflow:visible}.caption{padding:12px 12px 4px}.legend{padding:8px 12px}.metrics{grid-template-columns:1fr 1fr}aside:not([hidden]){grid-column:2;grid-row:1;position:static;width:auto;max-height:340px;overflow-y:auto;border-bottom:1px solid #ccd5c9}.parameter-rail{grid-column:1;grid-row:1 / span 2}main:not(.sidebar-closed) .workspace{grid-column:2;grid-row:2}main.sidebar-closed .workspace{grid-column:2}.results .metric strong{font-size:21px}}
+@media print{body{height:auto;display:block;overflow:visible}.workspace{display:block;overflow:visible}.stage{height:500px}.results{overflow:visible;border:0}.parameter-rail,.workspace-toolbar,aside{display:none}main,main.sidebar-closed{display:block}}
+
+/* 情境模式按钮与状态 */
+.mode-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap;flex-shrink:0}
+.mode-label{font-size:12px;color:#66786e;margin-right:2px}
+.mode-btn{font:inherit;font-size:12px;border:1px solid #9bad9f;background:#fff;color:#234638;padding:6px 12px;border-radius:4px;cursor:pointer}
+.mode-btn.active{background:#3f7962;color:#fff;border-color:#3f7962}
+.mode-btn:hover:not(.active){background:#e0e9df}
+.mode-status{font-size:11px;padding:2px 8px;border-radius:3px;font-weight:bold;white-space:nowrap}
+.mode-status.auto{background:#d0e4d8;color:#2e6b52}
+.mode-status.manual{background:#fce8d5;color:#a05a20}
+#autoResumeBtn{font:inherit;font-size:11px;border:1px solid #c4a070;background:#fce8d5;color:#a05a20;padding:4px 8px;border-radius:3px;cursor:pointer}
+
+/* IoT 感知面板 */
+.iot-panel{padding-bottom:10px;border-bottom:1px solid #ced7cc;margin-bottom:8px}
+.iot-panel h3{font-size:13px;margin:0 0 6px;color:#3f7962}
+.iot-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px}
+.iot-item{font-size:11px;display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px dotted #d5ddd2}
+.iot-item span:last-child{font-weight:bold}
+.iot-item.alert span:last-child{color:#c44}
+.scene-desc{font-size:12px;color:#3f7962;padding:4px 0 8px;border-bottom:1px solid #ced7cc;margin-bottom:8px}
+.scene-desc b{color:#234638}
+.explode-btn{font:inherit;font-size:12px;border:1px solid #7a9a8e;background:#e8f0ea;color:#2e6b52;padding:6px 12px;border-radius:4px;cursor:pointer;white-space:nowrap}
+.explode-btn.active{background:#3f7962;color:#fff;border-color:#3f7962}
+.explode-btn:hover:not(.active){background:#d0e4d8}
+.explode-info{padding-bottom:10px;border-bottom:1px solid #ced7cc;margin-bottom:8px;display:none}
+.explode-info h3{font-size:13px;margin:0 0 6px;color:#3f7962}
+.explode-item{font-size:11px;padding:3px 0;line-height:1.5}
+.explode-item b{color:#234638}
+.explode-item:before{content:'\25B8 ';color:#3f7962}
+</style>
+<header><div><small>GUANGYU / HUMAN FACTORS / DUAL-LAYER 02</small><h1>光域双层窗</h1></div><div>内外双层自适应采光 · 单位 mm<br><small>情境交互 / 非光学仿真</small></div></header>
+<div class="workspace-toolbar"><div class="mode-buttons"><span class="mode-label">情境模式</span><button class="mode-btn active" data-mode="normal" onclick="setMode('normal')">正常办公</button><button class="mode-btn" data-mode="antiGlare" onclick="setMode('antiGlare')">西晒防眩光</button><button class="mode-btn" data-mode="projection" onclick="setMode('projection')">投影会议</button><button class="mode-btn" data-mode="evening" onclick="setMode('evening')">傍晚节能</button><span class="mode-status auto" id="modeStatus">自动控制</span><button id="autoResumeBtn" style="display:none" onclick="resumeAuto()">自动恢复</button></div><div class="buttons"><button class="explode-btn" id="explodeBtn" onclick="toggleExplode()">爆炸图</button><button onclick="camera(-.75,.5)">轴测</button><button onclick="camera(0,0)">窗正视</button><button onclick="camera(-1.57,0)">工位侧视</button><button onclick="download('光域模型.obj',objText(p))">导出 OBJ</button><button onclick="download('光域参数.json',JSON.stringify(p,null,2))">导出参数</button><button onclick="drawing()">导出尺寸图</button></div><a class="button" href="人因分析报告.html">完整人因分析 →</a></div>
+<main class="sidebar-closed"><nav class="parameter-rail" aria-label="设计参数"><button id="parameter-toggle" aria-expanded="false" aria-controls="parameter-panel" onclick="toggleParameters()"><span aria-hidden="true">☰</span><span class="rail-label">设计参数</span></button></nav><aside id="parameter-panel" hidden><div class="panel-heading"><h2>调整设计参数</h2><button aria-label="收起设计参数" onclick="toggleParameters(false)">←</button></div><div id="controls" style="display:contents"></div><div class="buttons"><button onclick="preset(1100)">低眼高</button><button onclick="preset(1200)">基准</button><button onclick="preset(1300)">高眼高</button><button onclick="reset()">重置全部</button></div><p class="muted" style="font-size:12px">百叶倾角滑块为手动控制：拖动后进入人工接管，30 秒后自动恢复。玻璃颜色随情境模式渐变，不代表实际透光率。</p></aside><section class="workspace"><div class="stage"><div class="caption"><b>内外双层自适应采光系统</b><br><small>外层智能玻璃 × 内层微型百叶 · 拖动旋转 · 滚轮缩放 · 双击复位</small></div><canvas id="scene" aria-label="可旋转的窗体与人体三维概念模型"></canvas><div class="legend">绿色虚线：视线　橙色射线：阳光直射　红 X：百叶阻断　玻璃(青灰)负责整体调节 · 百叶(银灰)负责局部防眩光</div></div><div class="results"><div class="scene-desc" id="sceneDesc"></div><div class="explode-info" id="explodeInfo"><h3>双层分工说明</h3><div class="explode-item"><b>外层智能玻璃</b>：整体调光、隔热、降低明暗反差</div><div class="explode-item"><b>内层微型百叶</b>：快速、局部阻挡眼睛和屏幕方向的直射光</div><div class="explode-item"><b>两层关系</b>：玻璃负责整体调节，百叶负责局部防眩光</div></div><div class="iot-panel"><h3>IoT 感知状态</h3><div class="iot-grid" id="iotGrid"></div></div><div class="metrics" id="metrics"></div><div class="note" id="status" role="status"></div><div class="note" id="detail"></div><p class="muted" style="font-size:12px">直射判定采用平行太阳光线与理想薄百叶相交；未计算玻璃透射、散射、亮度、DGP、照度或热舒适。人体采用分段简化几何，未进行关节运动学或姿态评分。</p></div></section></main><footer>单文件版：model.js 已内联，无联网依赖，上传本文件即可运行。OBJ 是可导入的分组网格，不是 SolidWorks 原生特征模型。</footer>
+<script>
+/* 光域 · 内外双层自适应采光系统的情境交互模型
+   单位 mm；x 向室内，y 沿窗，z 向上。
+   外层智能玻璃 (x≈-25) 负责整体光线与热量调节；
+   内层微型百叶 (x≈95) 负责快速局部防眩光。两层间为 120 mm 空气间隙。 */
+
+const defaults = {
+  width: 1800, height: 1600, sill: 800, depth: 900,
+  eye: 1200, desk: 740, tilt: 30, alt: 25, az: 0,
+  split1: 1100, split2: 1550
+};
+
+/* ---- 情境模式定义 ---- */
+const sceneModes = {
+  normal: {
+    name: '正常办公',
+    glass: [
+      { r: 96, g: 130, b: 120, a: 0.10 },
+      { r: 96, g: 130, b: 120, a: 0.10 },
+      { r: 96, g: 130, b: 120, a: 0.10 }
+    ],
+    blindAngle: 30,
+    sunBlocked: false,
+    outdoorLux: 78000,
+    indoorLux: 6200,
+    occupied: true,
+    lampOn: false,
+    desc: '外层玻璃透光，百叶开启，自然采光充足'
+  },
+  antiGlare: {
+    name: '西晒防眩光',
+    glass: [
+      { r: 55, g: 82, b: 74, a: 0.68 },
+      { r: 62, g: 88, b: 80, a: 0.52 },
+      { r: 96, g: 130, b: 120, a: 0.12 }
+    ],
+    blindAngle: 75,
+    sunBlocked: true,
+    outdoorLux: 96000,
+    indoorLux: 3100,
+    occupied: true,
+    lampOn: false,
+    desc: '中下区玻璃变深，百叶阻断屏幕方向直射光'
+  },
+  projection: {
+    name: '投影会议',
+    glass: [
+      { r: 42, g: 62, b: 56, a: 0.82 },
+      { r: 42, g: 62, b: 56, a: 0.82 },
+      { r: 42, g: 62, b: 56, a: 0.82 }
+    ],
+    blindAngle: 85,
+    sunBlocked: true,
+    outdoorLux: 32000,
+    indoorLux: 750,
+    occupied: true,
+    lampOn: true,
+    desc: '玻璃整体变暗，百叶关闭，台灯补光'
+  },
+  evening: {
+    name: '傍晚节能',
+    glass: [
+      { r: 112, g: 126, b: 92, a: 0.06 },
+      { r: 112, g: 126, b: 92, a: 0.06 },
+      { r: 112, g: 126, b: 92, a: 0.06 }
+    ],
+    blindAngle: 20,
+    sunBlocked: false,
+    outdoorLux: 4800,
+    indoorLux: 1100,
+    occupied: true,
+    lampOn: true,
+    desc: '玻璃恢复透明，百叶打开，台灯补光'
+  }
+};
+
+/* ---- 场景动画状态（当前值，会向模式目标值渐变） ---- */
+const sceneState = {
+  mode: 'normal',
+  glass: sceneModes.normal.glass.map(g => ({ ...g })),
+  blindAngle: 30,
+  autoMode: true,
+  manualTimer: 0,
+  manualDuration: 30,
+  explode: 0,
+  explodeTarget: 0
+};
+
+/* ---- 几何构建 ---- */
+function build(p, st) {
+  st = st || sceneState;
+  const ex = (st && st.explode) || 0;
+  /* 爆炸图分层偏移（沿 X 轴，室外→室内方向展开） */
+  const offGlass = -100 * ex;
+  const offBlind = 220 * ex;
+  const offSlat = 300 * ex;
+  const offFurn = 420 * ex;
+  const objects = [];
+
+  function box(name, c, s, color, angle, transparent) {
+    if (angle === undefined) angle = 0;
+    if (transparent === undefined) transparent = false;
+    let v = [];
+    for (let z of [-1, 1]) for (let y of [-1, 1]) for (let x of [-1, 1]) {
+      let a = x * s[0] / 2, b = z * s[2] / 2;
+      v.push([c[0] + a * Math.cos(angle) - b * Math.sin(angle), c[1] + y * s[1] / 2, c[2] + a * Math.sin(angle) + b * Math.cos(angle)]);
+    }
+    objects.push({ name, v, f: [[0,2,3,1],[4,5,7,6],[0,1,5,4],[2,6,7,3],[0,4,6,2],[1,3,7,5]], color, transparent });
+  }
+
+  // 地面（不移动）
+  box('Floor', [1100, 0, -30], [2600, 2800, 40], '#dce2dd');
+
+  const top = p.sill + p.height, w = p.width;
+
+  // 窗框（不移动）
+  for (let y of [-w / 2, w / 2]) box('Frame_side', [0, y, (p.sill + top) / 2], [100, 45, p.height + 45], '#405653');
+  for (let z of [p.sill, p.split1, p.split2, top]) box('Frame_cross', [0, 0, z], [100, w, 35], '#405653');
+
+  // 外层智能玻璃 + 空气间隙 + 内层微型百叶
+  const zs = [p.sill, p.split1, p.split2, top];
+  for (let i = 0; i < 3; i++) {
+    const g = st.glass[i];
+    const glassColor = 'rgba(' + Math.round(g.r) + ',' + Math.round(g.g) + ',' + Math.round(g.b) + ',' + g.a.toFixed(3) + ')';
+    // 外层智能玻璃 (x = -25 + offGlass)
+    box('EC_glass_' + i, [-25 + offGlass, 0, (zs[i] + zs[i + 1]) / 2], [12, w - 45, zs[i + 1] - zs[i] - 35], glassColor, 0, true);
+    // 内层百叶盒 (x = 95 + offBlind)
+    box('Blind_cassette_' + i, [95 + offBlind, 0, zs[i + 1] - 35], [95, w - 60, 35], '#566d65');
+    // 百叶叶片 (x = 95 + offSlat)
+    for (let z = zs[i] + 45; z < zs[i + 1] - 45; z += 40)
+      box('Slat_' + i + '_' + Math.round(z), [95 + offSlat, 0, z], [50, w - 80, 2], '#c4c7b0', st.blindAngle * Math.PI / 180);
+  }
+
+  // 智能台灯（根据模式显示，随工位移动）
+  if (sceneModes[st.mode] && sceneModes[st.mode].lampOn) {
+    box('Lamp_base', [p.depth + 380 + offFurn, -60, p.desk + 8], [70, 70, 16], '#485a55');
+    box('Lamp_arm', [p.depth + 380 + offFurn, -60, p.desk + 90], [16, 16, 130], '#5a6e60');
+    box('Lamp_head', [p.depth + 380 + offFurn, -60, p.desk + 230], [55, 55, 28], '#b0c0b4');
+  }
+
+  // 桌面、桌腿（随工位移动）
+  box('Desktop', [p.depth + 250 + offFurn, -170, p.desk - 15], [1400, 800, 30], '#bca584');
+  for (let x of [p.depth - 370, p.depth + 870]) for (let y of [-490, 150]) box('Desk_leg', [x + offFurn, y, (p.desk - 30) / 2], [35, 35, p.desk - 30], '#52605b');
+
+  // 显示器（随工位移动）
+  box('Monitor', [p.depth + offFurn, -230, p.desk + 330], [540, 30, 320], '#263f3a');
+  box('Screen', [p.depth + offFurn, -211, p.desk + 330], [510, 8, 290], '#88afa6');
+  box('Monitor_stand', [p.depth + offFurn, -230, p.desk + 80], [35, 40, 150], '#485a55');
+  box('Monitor_base', [p.depth + offFurn, -230, p.desk + 8], [240, 170, 16], '#485a55');
+
+  // 键盘、控制器（随工位移动）
+  box('Keyboard', [p.depth + offFurn, 50, p.desk + 12], [430, 150, 20], '#e2e3d8');
+  box('Controller', [p.depth + 230 + offFurn, 130, p.desk + 18], [100, 75, 36], '#d1844f');
+
+  // 椅子（随工位移动）
+  box('Chair_seat', [p.depth + offFurn, 510, 450], [470, 450, 70], '#586f64');
+  box('Chair_back', [p.depth + offFurn, 725, 720], [470, 65, 480], '#586f64');
+  box('Chair_stem', [p.depth + offFurn, 510, 220], [65, 65, 400], '#4b5651');
+  box('Chair_foot', [p.depth + offFurn, 510, 50], [560, 500, 35], '#4b5651');
+
+  // 人体（随工位移动）
+  box('Torso', [p.depth + offFurn, 520, (p.eye - 170 + 520) / 2], [340, 200, p.eye - 170 - 520], '#d2ad8d');
+  box('Head', [p.depth + offFurn, 500, p.eye - 10], [165, 175, 220], '#e0b99a');
+  for (let x of [-115, 115]) {
+    box('Thigh', [p.depth + x + offFurn, 330, 520], [120, 380, 110], '#7d8c82');
+    box('Shin', [p.depth + x + offFurn, 150, 270], [100, 105, 440], '#7d8c82');
+    box('Foot', [p.depth + x + offFurn, 80, 65], [115, 230, 80], '#535f59');
+    box('Upper_arm', [p.depth + x * 1.65 + offFurn, 500, p.eye - 300], [90, 100, 260], '#d2ad8d');
+    box('Forearm', [p.depth + x * 1.65 + offFurn, 335, p.desk + 45], [85, 310, 85], '#d2ad8d');
+  }
+
+  return objects;
+}
+
+/* ---- 阳光射线计算 ---- */
+function sunRays(p, st) {
+  st = st || sceneState;
+  const rad = Math.PI / 180;
+  const alt = Math.max(0.1, p.alt);
+  const k = Math.tan(alt * rad) / Math.cos(p.az * rad || 0.001);
+  const tanAz = Math.tan(p.az * rad);
+  const w = p.width;
+  const sill = p.sill;
+  const top = sill + p.height;
+  const zs = [sill, p.split1, p.split2, top];
+  const t = st.blindAngle * rad;
+  const mode = sceneModes[st.mode];
+
+  const rays = [];
+  const ySamples = [-w / 4, 0, w / 4];
+  const zSamples = [sill + (p.split1 - sill) * 0.6, p.split1 + (p.split2 - p.split1) * 0.5];
+
+  for (let y_w of ySamples) {
+    for (let z_w of zSamples) {
+      if (z_w < sill + 30 || z_w > top - 30) continue;
+      // 阳光从窗外射入：x 增大、z 降低
+      const zAtBlind = z_w - 95 * k;
+      const yAtBlind = y_w + 95 * tanAz;
+      const zAtScreen = z_w - p.depth * k;
+      const yAtScreen = y_w + p.depth * tanAz;
+
+      // 检查百叶是否阻断（仅在百叶角度 > 45° 时进行几何检测）
+      let blocked = false;
+      if (st.blindAngle > 45) {
+        for (let zone = 0; zone < 3 && !blocked; zone++) {
+          for (let z = zs[zone] + 45; z < zs[zone + 1] - 45; z += 40) {
+            const slatHalfZ = 25 * Math.cos(t) + 1.5;
+            if (Math.abs(zAtBlind - z) < slatHalfZ && Math.abs(yAtBlind) < w / 2 - 40) {
+              blocked = true;
+              break;
+            }
+          }
+        }
+      }
+      // 模式级阻断（百叶接近关闭时强制阻断）
+      if (mode.sunBlocked && st.blindAngle > 60) blocked = true;
+
+      const screenZ = p.desk + 330;
+      const reachesScreen = !blocked &&
+        zAtScreen > p.desk && zAtScreen < p.desk + 660 &&
+        Math.abs(yAtScreen + 207) < 280;
+
+      rays.push({
+        start: [-350, y_w + 350 * tanAz, z_w + 350 * k],
+        windowPt: [0, y_w, z_w],
+        blindPt: [95, yAtBlind, zAtBlind],
+        screenPt: [p.depth, yAtScreen, zAtScreen],
+        blocked: blocked,
+        reachesScreen: reachesScreen
+      });
+    }
+  }
+  return rays;
+}
+
+/* ---- IoT 感知状态 ---- */
+function iotState(p, st) {
+  st = st || sceneState;
+  const mode = sceneModes[st.mode];
+  const avgOpacity = (st.glass[0].a + st.glass[1].a + st.glass[2].a) / 3;
+  const transmittance = Math.round((1 - avgOpacity) * 100);
+  const indoorLux = Math.round(mode.indoorLux * (1 - avgOpacity * 0.55));
+  const glare = !mode.sunBlocked && st.blindAngle < 40 && p.alt > 18 && avgOpacity < 0.35;
+
+  return {
+    outdoorLux: mode.outdoorLux,
+    indoorLux: indoorLux,
+    occupied: mode.occupied,
+    glare: glare,
+    transmittance: transmittance,
+    blindAngle: Math.round(st.blindAngle),
+    lampOn: mode.lampOn,
+    modeName: mode.name,
+    desc: mode.desc
+  };
+}
+
+/* ---- 分析（保留原有视距/视角/可达性分析） ---- */
+function analysis(p, st) {
+  st = st || sceneState;
+  const stA = Object.assign({}, st, { explode: 0 });
+  const tilt = st.blindAngle;
+  const rad = Math.PI / 180;
+  const alt = Math.max(0.1, p.alt);
+  const k = Math.tan(alt * rad) / Math.cos(p.az * rad || 0.001);
+  const eye = [p.depth, 410, p.eye];
+  const windowHit = [0, eye[1] - p.depth * Math.tan(p.az * rad), p.eye + p.depth * k];
+
+  const aperture = Math.abs(windowHit[1]) < p.width / 2 - 22.5 && windowHit[2] > p.sill + 17.5 && windowHit[2] < p.sill + p.height - 17.5;
+
+  let blocked = false;
+  const t = tilt * rad;
+  for (let o of build(p, stA).filter(function (o) { return o.name.startsWith('Slat'); })) {
+    const z = o.v.reduce(function (a, v) { return a + v[2]; }, 0) / 8;
+    const x = (p.eye + p.depth * k - z + 95 * Math.tan(t)) / (k + Math.tan(t));
+    const y = eye[1] - (p.depth - x) * Math.tan(p.az * rad);
+    if (Math.abs(x - 95) <= 25 * Math.cos(t) && Math.abs(y) < p.width / 2 - 40) blocked = true;
+  }
+
+  for (const o of build(p, stA).filter(function (o) { return o.name.startsWith('Frame') || o.name.startsWith('Blind_cassette'); })) {
+    let lo = 0, hi = 1;
+    for (let j = 0; j < 3; j++) {
+      let mn = Math.min.apply(null, o.v.map(function (v) { return v[j]; }));
+      let mx = Math.max.apply(null, o.v.map(function (v) { return v[j]; }));
+      let d = windowHit[j] - eye[j];
+      if (Math.abs(d) < 1e-9) { if (eye[j] < mn || eye[j] > mx) hi = -1; }
+      else { let a = (mn - eye[j]) / d, b = (mx - eye[j]) / d; lo = Math.max(lo, Math.min(a, b)); hi = Math.min(hi, Math.max(a, b)); }
+    }
+    if (lo <= hi) blocked = true;
+  }
+
+  const monitor = [p.depth, -207, p.desk + 330];
+  const view = Math.hypot(617, p.eye - monitor[2]);
+  const down = Math.atan2(p.eye - monitor[2], 617) / rad;
+  const reach = Math.hypot(230, 390, p.desk + 36 - (p.eye - 170));
+  const zone = p.eye < p.split1 ? '下区' : p.eye < p.split2 ? '中区' : '上区';
+  const upper = Math.atan2(p.sill + p.height - p.eye, p.depth) / rad;
+  const boundary = Math.atan2(p.split2 - p.eye, p.depth) / rad;
+
+  return { eye, windowHit, aperture, blocked, direct: aperture && !blocked, view, down, reach, zone, upper, boundary };
+}
+
+/* ---- OBJ 导出 ---- */
+function objText(p, st) {
+  st = st || sceneState;
+  let out = ['# Guangyu dual-layer conceptual mesh; units millimetres; not fabrication CAD'];
+  let n = 1;
+  for (let o of build(p, st)) {
+    out.push('o ' + o.name);
+    for (let v of o.v) out.push('v ' + v.map(function (x) { return x.toFixed(3); }).join(' '));
+    for (let f of o.f) out.push('f ' + f.map(function (i) { return i + n; }).join(' '));
+    n += o.v.length;
+  }
+  return out.join('\n');
+}
+
+if (typeof module !== 'undefined') module.exports = { defaults, sceneModes, sceneState, build, sunRays, iotState, analysis, objText };
+
+</script><script>
+let p={...defaults},yaw=-.75,pitch=.5,zoom=1,objects=[],A;
+const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
+const specs=[['width','窗宽',1400,2200,50],['height','窗高',1500,1900,50],['sill','窗台高度',650,850,25],['depth','眼位距窗',650,1300,25],['eye','坐姿眼高',1050,1350,25],['desk','桌面高度',680,800,10],['split1','下 / 中分界高度',1000,1150,25],['split2','中 / 上分界高度',1450,1650,25],['tilt','百叶倾角（手动）°',0,90,5],['alt','太阳高度角 °',5,65,5],['az','太阳偏离窗法线 °',-60,60,5]];
+document.querySelector('#controls').innerHTML=specs.map(([key,label,min,max,step])=>`<label for="${key}">${label}<span id="v_${key}"></span><input id="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${p[key]}"></label>`).join('');
+for(let [key] of specs)document.getElementById(key).oninput=e=>{
+  p[key]=+e.target.value;
+  if(key==='tilt'){sceneState.autoMode=false;sceneState.manualTimer=sceneState.manualDuration;updateModeUI();}
+  update();
+};
+function toggleParameters(force){const panel=document.getElementById('parameter-panel'),open=typeof force==='boolean'?force:panel.hidden;panel.hidden=!open;document.querySelector('main').classList.toggle('sidebar-closed',!open);document.getElementById('parameter-toggle').setAttribute('aria-expanded',String(open));if(!open)document.getElementById('parameter-toggle').focus();requestAnimationFrame(draw)}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('parameter-panel').hidden)toggleParameters(false)});
+new ResizeObserver(()=>requestAnimationFrame(draw)).observe(canvas);
+function preset(e){p.eye=e;update()}function reset(){p={...defaults};sceneState.mode='normal';sceneState.glass=sceneModes.normal.glass.map(g=>({...g}));sceneState.blindAngle=30;sceneState.autoMode=true;sceneState.manualTimer=0;sceneState.explode=0;sceneState.explodeTarget=0;const eb=document.getElementById('explodeBtn');eb.textContent='爆炸图';eb.classList.remove('active');document.getElementById('explodeInfo').style.display='none';camera(-.75,.5);updateModeUI();update()}function camera(y,t){yaw=y;pitch=t;zoom=1;draw()}
+function project(v){let x=v[0]-650,y=v[1],z=v[2]-1100;let u=y*Math.cos(yaw)+x*Math.sin(yaw),dep=x*Math.cos(yaw)-y*Math.sin(yaw),vv=z*Math.cos(pitch)-dep*Math.sin(pitch);return [canvas.clientWidth/2+(u-centerU)*scale,canvas.clientHeight/2-(vv-centerV)*scale,dep*Math.cos(pitch)+z*Math.sin(pitch)];}let scale,centerU=0,centerV=0;
+function line(a,b,color,dash){let u=project(a),v=project(b);ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash(dash||[]);ctx.beginPath();ctx.moveTo(u[0],u[1]);ctx.lineTo(v[0],v[1]);ctx.stroke();ctx.setLineDash([])}
+/* ---- 阳光射线绘制 ---- */
+function drawSunRays(){
+  const rays=sunRays(p);
+  const avgA=(sceneState.glass[0].a+sceneState.glass[1].a+sceneState.glass[2].a)/3;
+  const rayAlpha=Math.max(.15,.75*(1-avgA*.6));
+  for(let ray of rays){
+    if(ray.blocked){
+      line(ray.start,ray.windowPt,`rgba(240,150,40,${rayAlpha})`,[5,3]);
+      line(ray.windowPt,ray.blindPt,`rgba(240,140,35,${rayAlpha*.9})`,[4,3]);
+      let bp=project(ray.blindPt);
+      ctx.strokeStyle=`rgba(210,70,20,${rayAlpha+.2})`;ctx.lineWidth=1.8;
+      ctx.beginPath();ctx.moveTo(bp[0]-5,bp[1]-5);ctx.lineTo(bp[0]+5,bp[1]+5);ctx.moveTo(bp[0]+5,bp[1]-5);ctx.lineTo(bp[0]-5,bp[1]+5);ctx.stroke();
+    }else{
+      line(ray.start,ray.windowPt,`rgba(240,150,40,${rayAlpha})`,[5,3]);
+      line(ray.windowPt,ray.screenPt,`rgba(240,150,40,${rayAlpha*.65})`,[5,3]);
+      if(ray.reachesScreen){let sp=project(ray.screenPt);let g=ctx.createRadialGradient(sp[0],sp[1],0,sp[0],sp[1],14);g.addColorStop(0,`rgba(255,180,60,${rayAlpha*.5})`);g.addColorStop(1,'rgba(255,180,60,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(sp[0],sp[1],14,0,7);ctx.fill();}
+    }
+  }
+}
+/* ---- 文字标签 ---- */
+function drawTextBg(text,x,y){ctx.font='10px Microsoft YaHei';ctx.textAlign='center';let tw=ctx.measureText(text).width;ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(x-tw/2-4,y-8,tw+8,15);ctx.fillStyle='#234638';ctx.fillText(text,x,y+2);ctx.textAlign='left';}
+function drawLabels(){
+  if(sceneState.explode>0.5)return;
+  const top=p.sill+p.height,w=p.width;
+  let p1=project([-25,-w*.28,top+45]);drawTextBg('外层智能玻璃',p1[0],p1[1]);
+  let p2=project([35,0,top+45]);drawTextBg('空气间隙 120mm',p2[0],p2[1]);
+  let p3=project([95,w*.28,top+45]);drawTextBg('内层微型百叶',p3[0],p3[1]);
+  ctx.font='10px Microsoft YaHei';ctx.fillStyle='#66786e';ctx.textAlign='center';
+  ctx.fillText('玻璃负责整体调节 · 百叶负责局部防眩光',canvas.clientWidth/2,canvas.clientHeight-6);
+  ctx.textAlign='left';
+}
+/* ---- 爆炸图标注 ---- */
+function drawExplodeLabels(){
+  if(sceneState.explode<0.15)return;
+  const ex=sceneState.explode,top=p.sill+p.height,w=p.width;
+  const offGlass=-100*ex,offBlind=220*ex,offSlat=300*ex,offFurn=420*ex;
+  const labels=[
+    {num:'01',name:'外侧窗框',anchor:[0,-w*.42,top+35]},
+    {num:'02',name:'外层分区电致变色智能玻璃',anchor:[-25+offGlass,w*.30,top+35]},
+    {num:'03',name:'中间空气层',anchor:[(-25+offGlass+95+offBlind)/2,-w*.18,top+55]},
+    {num:'04',name:'内层微型百叶遮阳帘',anchor:[95+offSlat,-w*.35,top+35]},
+    {num:'05',name:'百叶帘盒与叶片转轴',anchor:[95+offBlind,w*.40,top-15]},
+    {num:'06',name:'桌面控制器',anchor:[p.depth+230+offFurn,250,p.desk+54]},
+    {num:'07',name:'办公工位',anchor:[p.depth+offFurn,-450,p.desk+420]}
+  ];
+  for(let i=0;i<labels.length;i++){
+    const lbl=labels[i],ap=project(lbl.anchor);
+    const yo=(i%2===0)?-24:24;
+    const tx=ap[0],ty=Math.max(14,Math.min(canvas.clientHeight-10,ap[1]+yo));
+    ctx.strokeStyle='rgba(63,121,98,.55)';ctx.lineWidth=1;ctx.setLineDash([3,2]);
+    ctx.beginPath();ctx.moveTo(ap[0],ap[1]);ctx.lineTo(tx,ty+(yo<0?7:-7));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#3f7962';ctx.beginPath();ctx.arc(ap[0],ap[1],2.5,0,7);ctx.fill();
+    ctx.font='bold 10px Microsoft YaHei';ctx.textAlign='center';
+    const text=lbl.num+' '+lbl.name,tw=ctx.measureText(text).width;
+    ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillRect(tx-tw/2-4,ty-8,tw+8,15);
+    ctx.fillStyle='#234638';ctx.fillText(text,tx,ty+2);ctx.textAlign='left';
+  }
+}
+/* ---- 主绘制 ---- */
+function draw(){
+  let w=canvas.clientWidth,h=canvas.clientHeight,d=devicePixelRatio||1;canvas.width=w*d;canvas.height=h*d;ctx.scale(d,d);
+  let points=objects.flatMap(o=>o.v).map(v=>{let x=v[0]-650,y=v[1],z=v[2]-1100;return [y*Math.cos(yaw)+x*Math.sin(yaw),z*Math.cos(pitch)-(x*Math.cos(yaw)-y*Math.sin(yaw))*Math.sin(pitch)]});
+  if(points.length){let us=points.map(v=>v[0]),vs=points.map(v=>v[1]),umin=Math.min(...us),umax=Math.max(...us),vmin=Math.min(...vs),vmax=Math.max(...vs);centerU=(umin+umax)/2;centerV=(vmin+vmax)/2;scale=Math.max(.001,Math.min((w-32)/(umax-umin),(h-24)/(vmax-vmin)))*zoom;}else{scale=1}
+  ctx.clearRect(0,0,w,h);
+  let opaque=[],trans=[];
+  for(let o of objects)for(let f of o.f){let v=f.map(i=>project(o.v[i]));let face={v,color:o.color,z:v.reduce((a,b)=>a+b[2],0)/v.length};if(o.transparent)trans.push(face);else opaque.push(face);}
+  opaque.sort((a,b)=>a.z-b.z);trans.sort((a,b)=>a.z-b.z);
+  for(let f of opaque){ctx.beginPath();f.v.forEach((v,i)=>i?ctx.lineTo(v[0],v[1]):ctx.moveTo(v[0],v[1]));ctx.closePath();ctx.fillStyle=f.color;ctx.fill();ctx.strokeStyle='#314d3924';ctx.lineWidth=.6;ctx.stroke();}
+  for(let f of trans){ctx.beginPath();f.v.forEach((v,i)=>i?ctx.lineTo(v[0],v[1]):ctx.moveTo(v[0],v[1]));ctx.closePath();ctx.fillStyle=f.color;ctx.fill();ctx.strokeStyle='rgba(60,90,80,.25)';ctx.lineWidth=.5;ctx.stroke();}
+  drawSunRays();
+  if(sceneModes[sceneState.mode].lampOn){const exF=420*(sceneState.explode||0);let lp=project([p.depth+380+exF,-60,p.desk+30]);let g=ctx.createRadialGradient(lp[0],lp[1],0,lp[0],lp[1],75);g.addColorStop(0,'rgba(255,200,100,.35)');g.addColorStop(1,'rgba(255,200,100,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(lp[0],lp[1],75,0,7);ctx.fill();}
+  if(A){line(A.eye,[p.depth,-207,p.desk+330],'#247753',[7,5]);line(A.eye,A.windowHit,'#c47835',[6,4]);let e=project(A.eye);ctx.fillStyle='#234e39';ctx.beginPath();ctx.arc(e[0],e[1],4,0,7);ctx.fill();}
+  drawLabels();
+  drawExplodeLabels();
+}
+/* ---- 情境模式 ---- */
+function setMode(mode){
+  sceneState.mode=mode;sceneState.autoMode=true;sceneState.manualTimer=0;
+  p.tilt=sceneModes[mode].blindAngle;document.getElementById('tilt').value=p.tilt;
+  updateModeUI();update();
+}
+function resumeAuto(){
+  sceneState.autoMode=true;sceneState.manualTimer=0;
+  p.tilt=sceneModes[sceneState.mode].blindAngle;document.getElementById('tilt').value=p.tilt;
+  updateModeUI();update();
+}
+function toggleExplode(){
+  const target=sceneState.explodeTarget>0.5?0:1;
+  sceneState.explodeTarget=target;
+  const btn=document.getElementById('explodeBtn');
+  btn.textContent=target>0.5?'恢复装配':'爆炸图';
+  btn.classList.toggle('active',target>0.5);
+  document.getElementById('explodeInfo').style.display=target>0.5?'block':'none';
+}
+function updateModeUI(){
+  document.querySelectorAll('.mode-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===sceneState.mode));
+  const st=document.getElementById('modeStatus'),btn=document.getElementById('autoResumeBtn');
+  if(sceneState.autoMode){st.textContent='自动控制';st.className='mode-status auto';btn.style.display='none';}
+  else{const r=Math.max(0,Math.ceil(sceneState.manualTimer));st.textContent='人工接管 ('+r+'s)';st.className='mode-status manual';btn.style.display='';}
+}
+function updateIoT(){
+  const i=iotState(p);
+  document.querySelector('#sceneDesc').innerHTML='<b>'+i.modeName+'</b> — '+i.desc;
+  document.querySelector('#iotGrid').innerHTML=[
+    ['室外照度',i.outdoorLux+' lx'],['室内照度',i.indoorLux+' lx'],
+    ['工位有人',i.occupied?'是':'否'],['屏幕眩光',i.glare?'有 ⚠':'无'],
+    ['玻璃透光',i.transmittance+'%'],['百叶角度',i.blindAngle+'°'],
+    ['台灯补光',i.lampOn?'开':'关']
+  ].map(([l,v])=>`<div class="iot-item${i.glare&&l==='屏幕眩光'?' alert':''}"><span>${l}</span><span>${v}</span></div>`).join('');
+}
+function updateMetrics(){
+  document.querySelector('#metrics').innerHTML=[['视距',Math.round(A.view)+' mm'],['向下视角',A.down.toFixed(1)+'°'],['控制器肩点距离',Math.round(A.reach)+' mm'],['水平眼高所在区',A.zone]].map(([l,v])=>`<div class="metric"><small>${l}</small><strong>${v}</strong></div>`).join('');
+}
+function update(){
+  for(let [k] of specs){document.getElementById(k).value=p[k];document.getElementById('v_'+k).textContent=k==='tilt'?Math.round(sceneState.blindAngle):p[k];}
+  objects=build(p);A=analysis(p);updateMetrics();updateIoT();
+  document.querySelector('#status').textContent=!A.aperture?'眼位回溯光线未进入窗净开口；当前几何下无该路径直射。':A.blocked?'眼位回溯光线与百叶或框体相交；当前几何下该直射路径被遮挡。':'眼位回溯光线未被百叶或框体挡住；当前几何下存在直射路径，需调整百叶或工位。';
+  document.querySelector('#detail').textContent=`窗面交点：沿窗 ${Math.round(A.windowHit[1])} mm，高 ${Math.round(A.windowHit[2])} mm。上区视野仰角 ${A.boundary.toFixed(1)}°—${A.upper.toFixed(1)}°（未扣除叶片遮挡）。屏幕上缘 ${p.desk+490} mm，${p.desk+490>p.eye?'高于眼位，建议降低显示器':'不高于眼位'}。可达距离仅为肩点到控制器的直线距离，需真实人体尺寸验证。`;
+  draw();
+}
+/* ---- 动画循环 ---- */
+let lastTime=performance.now(),uiCounter=0;
+function animate(){
+  const now=performance.now(),dt=Math.min(.1,(now-lastTime)/1000);lastTime=now;
+  const target=sceneModes[sceneState.mode];
+  const rate=1-Math.pow(.001,dt);
+  for(let i=0;i<3;i++){const g=sceneState.glass[i],tg=target.glass[i];g.r+=(tg.r-g.r)*rate;g.g+=(tg.g-g.g)*rate;g.b+=(tg.b-g.b)*rate;g.a+=(tg.a-g.a)*rate;}
+  const targetAngle=sceneState.autoMode?target.blindAngle:p.tilt;
+  sceneState.blindAngle+=(targetAngle-sceneState.blindAngle)*rate;
+  sceneState.explode+=(sceneState.explodeTarget-sceneState.explode)*rate;
+  if(!sceneState.autoMode){sceneState.manualTimer-=dt;if(sceneState.manualTimer<=0){sceneState.autoMode=true;p.tilt=target.blindAngle;document.getElementById('tilt').value=p.tilt;updateModeUI();}}
+  document.getElementById('v_tilt').textContent=Math.round(sceneState.blindAngle);
+  objects=build(p);A=analysis(p);updateIoT();draw();
+  if(++uiCounter>=15){updateModeUI();uiCounter=0;}
+  requestAnimationFrame(animate);
+}
+/* ---- 交互 ---- */
+let drag;canvas.onpointerdown=e=>{drag=[e.clientX,e.clientY,yaw,pitch];canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{if(drag){yaw=drag[2]+(e.clientX-drag[0])*.006;pitch=Math.max(-.7,Math.min(1.2,drag[3]+(e.clientY-drag[1])*.006));draw()}};canvas.onpointerup=canvas.onpointercancel=()=>drag=null;canvas.onwheel=e=>{e.preventDefault();zoom=Math.max(.5,Math.min(2.5,zoom*Math.exp(-e.deltaY*.001)));draw()};canvas.ondblclick=()=>camera(-.75,.5);window.onresize=draw;
+function download(name,text){let a=document.createElement('a'),u=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
+function dimensionSVG(){const s=.22,x=95,y=75,w=p.width*s,h=p.height*s;let b1=y+(p.sill+p.height-p.split1)*s,b2=y+(p.sill+p.height-p.split2)*s;return `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="720" viewBox="0 0 1000 720"><rect width="1000" height="720" fill="#fff"/><g font-family="Microsoft YaHei,sans-serif" fill="#233c34"><text x="50" y="35" font-size="24">光域双层窗 / 概念尺寸图 / mm</text><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#d9e7df" stroke="#233c34" stroke-width="5"/><path d="M ${x} ${b1}h ${w} M ${x} ${b2}h ${w}" stroke="#233c34" stroke-width="4"/><text x="${x}" y="${y+h+30}">窗宽 ${p.width} · 窗高 ${p.height} · 窗台 ${p.sill}</text><text x="${x+w+20}" y="${b1}">下/中 ${p.split1}</text><text x="${x+w+20}" y="${b2}">中/上 ${p.split2}</text><text x="70" y="560">眼位距窗 ${p.depth} · 坐姿眼高 ${p.eye} · 桌高 ${p.desk}</text><text x="70" y="595">外层玻璃 x=-25 · 空气间隙 120mm · 内层百叶 x=95 · 叶宽50 · 轴间距40 · 倾角 ${Math.round(sceneState.blindAngle)}°</text><text x="70" y="630">情境模式：${sceneModes[sceneState.mode].name} · 爆炸图：${sceneState.explodeTarget>0.5?'展开':'装配'}状态</text><text x="70" y="660">所有尺寸为设计假设；分界为标高，窗高为上下框中心线间距。非加工图。</text></g></svg>`}
+function drawing(){download('光域尺寸图.svg',dimensionSVG())}
+/* ---- 启动 ---- */
+update();requestAnimationFrame(animate);
+</script></html>
